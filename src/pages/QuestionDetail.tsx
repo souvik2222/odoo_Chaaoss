@@ -105,7 +105,7 @@ const QuestionDetail: React.FC = () => {
     try {
       await api.post(`/answers/${answerId}/pin`);
       await fetchQuestion();
-      toast.success('Answer pinned');
+      toast.success('Pinned accepted answer');
     } catch (error) {
       toast.error('Error pinning answer');
     }
@@ -351,7 +351,7 @@ const QuestionDetail: React.FC = () => {
                         {isQuestionOwner && !answer.isAccepted && (
                           <button
                             onClick={() => handleAcceptAnswer(answer._id)}
-                            className="text-green-600 hover:text-green-700 text-sm font-medium transition-colors"
+                            
                           >
                             Accept Answer
                           </button>
@@ -359,9 +359,9 @@ const QuestionDetail: React.FC = () => {
                         {isQuestionOwner && !answer.isPinned && (
                           <button
                             onClick={() => handlePinAnswer(answer._id)}
-                            className="text-orange-600 hover:text-orange-700 text-sm font-medium transition-colors"
+                            className="text-green-600 hover:text-green-700 text-sm font-medium transition-colors"
                           >
-                            Pin Answer
+                            Accepted Answer
                           </button>
                         )}
                         <button
@@ -486,7 +486,7 @@ const QuestionDetail: React.FC = () => {
                 onChange={setAnswerContent}
                 placeholder="Write your answer here..."
               />
-              <div className="flex justify-end mt-4">
+              <div className="flex justify-end pt-4">
                 <button
                   type="submit"
                   disabled={submittingAnswer || !answerContent.trim()}
