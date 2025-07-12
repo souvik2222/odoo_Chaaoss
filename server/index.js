@@ -1,20 +1,24 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const cookieParser = require('cookie-parser');
-require('dotenv').config();
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
 
-const authRoutes = require('./routes/auth');
-const questionRoutes = require('./routes/questions');
-const answerRoutes = require('./routes/answers');
-const commentRoutes = require('./routes/comments');
-const notificationRoutes = require('./routes/notifications');
-const userRoutes = require('./routes/users');
+import authRoutes from './routes/auth.js';
+import questionRoutes from './routes/questions.js';
+import answerRoutes from './routes/answers.js';
+import commentRoutes from './routes/comments.js';
+import notificationRoutes from './routes/notifications.js';
+import userRoutes from './routes/users.js';
+
+dotenv.config();
 
 const app = express();
 
+// Security middleware
 app.use(helmet());
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -30,7 +34,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/stackit')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/stackit', {
+  
+})
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('MongoDB connection error:', err));
 
@@ -42,6 +48,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);
 
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Something went wrong!' });
