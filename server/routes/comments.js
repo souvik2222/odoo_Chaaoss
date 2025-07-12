@@ -1,25 +1,25 @@
-import express from 'express';
-import Comment from '../models/Comment.js';
-import Answer from '../models/Answer.js';
-import Notification from '../models/Notification.js';
-import { authenticateToken } from '../middleware/auth.js';
-
+import express from "express";
+import Comment from "../models/Comment.js";
+import Answer from "../models/Answer.js";
+import Notification from "../models/Notification.js";
+import { authenticateToken } from "../middleware/auth.js";
+import User from "../models/User.js";
 const router = express.Router();
 
 // Create comment
-router.post('/', authenticateToken, async (req, res) => {
+router.post("/", authenticateToken, async (req, res) => {
   try {
     const { content, answerId } = req.body;
 
-    const answer = await Answer.findById(answerId).populate('author');
+    const answer = await Answer.findById(answerId).populate("author");
     if (!answer || !answer.isActive) {
-      return res.status(404).json({ message: 'Answer not found' });
+      return res.status(404).json({ message: "Answer not found" });
     }
 
     const comment = new Comment({
       content,
       answer: answerId,
-      author: req.user._id
+      author: req.user._id,
     });
 
     await comment.save();
@@ -33,14 +33,39 @@ router.post('/', authenticateToken, async (req, res) => {
       await new Notification({
         recipient: answer.author._id,
         sender: req.user._id,
-        type: 'comment',
+        type: "comment",
         message: `${req.user.username} commented on your answer`,
-        relatedAnswer: answerId
+        relatedAnswer: answerId,
+        
       }).save();
     }
 
-    const populatedComment = await Comment.findById(comment._id)
-      .populate('author', 'username avatar');
+    const mentionedUsernames = [
+      ...new Set((content.match(/@(\w+)/g) || []).map(u => u.slice(1)))
+    ];
+
+    await Promise.all(
+      mentionedUsernames.map(async username => {
+        const mentioned = await User.findOne({ username });
+        if (
+          mentioned &&
+          mentioned._id.toString() !== req.user._id.toString()
+        ) {
+          await new Notification({
+            recipient: mentioned._id,
+            sender: req.user._id,
+            type: "mention",
+            message: `${req.user.username} mentioned you in a comment`,
+            relatedAnswer: answerId,
+          }).save();
+        }
+      })
+    );
+
+    const populatedComment = await Comment.findById(comment._id).populate(
+      "author",
+      "username avatar"
+    );
 
     res.status(201).json(populatedComment);
   } catch (error) {
@@ -49,23 +74,26 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // Delete comment
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete("/:id", authenticateToken, async (req, res) => {
   try {
     const comment = await Comment.findById(req.params.id);
 
     if (!comment || !comment.isActive) {
-      return res.status(404).json({ message: 'Comment not found' });
+      return res.status(404).json({ message: "Comment not found" });
     }
 
     // Check if user is owner or admin
-    if (comment.author.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Not authorized' });
+    if (
+      comment.author.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(403).json({ message: "Not authorized" });
     }
 
     comment.isActive = false;
     await comment.save();
 
-    res.json({ message: 'Comment deleted successfully' });
+    res.json({ message: "Comment deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
