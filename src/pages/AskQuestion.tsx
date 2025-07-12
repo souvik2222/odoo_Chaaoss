@@ -141,7 +141,7 @@ const AskQuestion: React.FC = () => {
           </div>
 
           {/* Tags */}
-          <div>
+          <div className="pt-6">
             <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
               Tags
             </label>
